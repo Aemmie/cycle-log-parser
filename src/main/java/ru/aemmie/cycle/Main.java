@@ -3,7 +3,9 @@ package ru.aemmie.cycle;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.Tailer;
+import ru.aemmie.cycle.overlay.Overlay;
 
+import javax.swing.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,9 +26,9 @@ public class Main {
 
         log.info("Starting log parser...");
 
-        Tailer tailer = new Tailer(prospect.toFile(), new Listener());
+        SwingUtilities.invokeAndWait(Overlay::new);
 
-        tailer.run();
+        new Tailer(prospect.toFile(), new Listener(), 500).run();
 
     }
 

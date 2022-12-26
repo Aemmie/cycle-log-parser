@@ -1,4 +1,4 @@
-package ru.aemmie.cycle;
+package ru.aemmie.cycle.basic;
 
 import lombok.Getter;
 
