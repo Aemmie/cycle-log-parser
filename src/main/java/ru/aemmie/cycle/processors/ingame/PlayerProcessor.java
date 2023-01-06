@@ -58,11 +58,7 @@ public class PlayerProcessor implements GameProcessor {
             String from;
             if (startsWith(event.getCauser(), PLAYER_PREFIX)) {
                 if ("None".equals(event.getOrigin())) {
-                    if (event.getDamage() == 150f) {
-                        from = Weapons.SUICIDE.toColorfulString();
-                    } else {
-                        from = Weapons.HEIGHT.toColorfulString();
-                    }
+                    from = Weapons.HEIGHT.toColorfulString();
                 } else {
                     var weapon = Weapons.parse(event.getOrigin());
                     from = weapon == UNKNOWN ? event.getOrigin() : weapon.toColorfulString();
@@ -71,6 +67,8 @@ public class PlayerProcessor implements GameProcessor {
                 var aiName = substringBetween(event.getCauser(), AI_CHAR_PREFIX, "_");
                 var ai = Weapons.parse(aiName);
                 from = ai == UNKNOWN ? aiName : ai.toColorfulString();
+            } else if ("None".equals(event.getCauser()) && "None".equals(event.getOrigin())) {
+                from = Weapons.SUICIDE.toColorfulString();
             } else {
                 from = event.getCauser();
             }
