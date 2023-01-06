@@ -32,9 +32,11 @@ public class PlayerParser implements Parser {
                     .state("inMatch".equals(state) ? IN_MATCH : FINISHED)
                     .build();
         } else if (line.startsWith("OnPlayerStateChanged")) {
+            String stateId = substringBetween(line.getMsg(), "PlayerState_Match_BP_C_", "'");
             return PlayerBodyCreatedEvent.builder()
                     .time(line.getTime())
-                    .stateId(substringBetween(line.getMsg(), "PlayerState_Match_BP_C_", "'"))
+                    //there are rare situations where Playerstate is 'None'
+                    .stateId(stateId != null ? stateId : substringBetween(line.getMsg(), "Playerstate '", "'"))
                     .characterId(substringBetween(line.getMsg(), PLAYER_PREFIX, "'"))
                     .role(substringBetween(line.getMsg(), "Role '", "'"))
                     .map(GameMap.parse(substringBetween(line.getMsg(), "/Game/Maps/MP/", "/")))
