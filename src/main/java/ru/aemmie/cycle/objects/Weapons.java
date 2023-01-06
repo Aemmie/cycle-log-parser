@@ -44,9 +44,11 @@ public enum Weapons {
 
     KNIFE(RAINBOW, "Melee_Knife_01"),
 
-    SHOCK_GRENADE_1(UNCOMMON, "ShockGrenade_01"),
-    SHOCK_GRENADE_2(RARE, "ShockGrenade_02"),
-    SHOCK_GRENADE_3(EXOTIC, "ShockGrenade_03"),
+    SHOCK_GRENADE_1(COMMON, "ShockGrenade_01"),
+    SHOCK_GRENADE_2(UNCOMMON, "ShockGrenade_02"),
+    SHOCK_GRENADE_3(RARE, "ShockGrenade_03"),
+    SHOCK_GRENADE_4(EPIC, "ShockGrenade_04"),   //?
+    SHOCK_GRENADE_5(EXOTIC, "ShockGrenade_05"), //?
     GAS_GRENADE(UNCOMMON, "Consumable_GasGrenade_01"),
 
     SUICIDE(COMMON, "suicide"),
