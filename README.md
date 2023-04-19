@@ -16,7 +16,7 @@ Tested on TCF 3.2.0, Win10, OpenJDK 17, 2560x1440.
 1. Take latest JAR from releases (or build it by yourself)
 2. Make sure you have Java **17+**
 3. Open CMD and `cd` to directory of your jar
-4. Launch it by typing `java -jar cycle.jar`
+4. Launch it by typing `java --enable-preview -jar cycle.jar`
 
 # What does it look like
 (top right corner)
