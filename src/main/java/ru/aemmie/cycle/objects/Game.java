@@ -1,59 +1,48 @@
 package ru.aemmie.cycle.objects;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import ru.aemmie.cycle.Utils;
-import ru.aemmie.cycle.events.state.GameStateUpdated;
+import com.github.javafaker.Faker;
+import lombok.Builder;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Random;
 
-@Getter
-@Setter
-@Accessors(fluent = true)
 public class Game {
-    private final String instanceId;
-    private final Map<String, Player> players = new ConcurrentHashMap<>();
-    private GameMap map = GameMap.BRIGHT_SANDS;
-    private int partySize = 1;
-    private int playerCount = 0;
-    private boolean evacuated = false;
+    public final String instanceId;
+    public final String region;
+    public final String name;
+    public final GameMap map;
+    public final Instant createdAt;
+    public final int partySize;
 
-    private Instant createdAt;
-    private Instant enteredAt;
+    public final Map<String, Integer> killCount = new HashMap<>();
+    public int players = 0;
+    public int radar = 0;
 
-    private boolean ended;
-
-    public Game(String instanceId) {
+    @Builder
+    public Game(String instanceId, String region, GameMap map, Instant createdAt, int partySize) {
         this.instanceId = instanceId;
+        this.region = region;
+        this.map = map;
+        this.createdAt = createdAt;
+        this.partySize = partySize;
+
+        long seed = Long.parseLong(StringUtils.substringAfterLast(instanceId, '-'), 16);
+        Faker faker = new Faker(new Random(seed));
+        this.name = faker.color().name() + " " + faker.animal().name();
     }
 
-    public Instant getInstanceDeathTime() {
-        return createdAt == null ? null : createdAt.plus(6, ChronoUnit.HOURS);
-    }
-
-    public Game plusPlayer() {
-        playerCount += 1;
+    public Game clear() {
+        killCount.clear();
+        players = 0;
+        radar = 0;
         return this;
     }
 
-    public Game minusPlayer() {
-        playerCount -= 1;
-        return this;
-    }
-
-    public Optional<Player> findPlayerByCharacterId(String characterId) {
-        return players.values().stream()
-                .filter(v -> v.characterIds().contains(characterId))
-                .findAny();
-    }
-
-    public void updateUI() {
-        Utils.eventBus.post(GameStateUpdated.builder().game(this).build());
+    public int kill(String id) {
+        return killCount.compute(id, (k, v) -> (v == null ? 0 : v) + 1);
     }
 
 }

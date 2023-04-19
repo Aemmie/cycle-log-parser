@@ -1,65 +1,105 @@
 package ru.aemmie.cycle.parsers;
 
-import org.apache.commons.lang3.EnumUtils;
-import ru.aemmie.cycle.basic.Line;
-import ru.aemmie.cycle.basic.Parser;
-import ru.aemmie.cycle.events.parser.ParserEvent;
-import ru.aemmie.cycle.events.parser.player.PlayerBodyCreatedEvent;
-import ru.aemmie.cycle.events.parser.player.PlayerBodyDestroyedEvent;
-import ru.aemmie.cycle.events.parser.player.PlayerFinishedEvent;
-import ru.aemmie.cycle.events.parser.player.PlayerStateEvent;
-import ru.aemmie.cycle.objects.GameMap;
+import lombok.extern.slf4j.Slf4j;
+import ru.aemmie.cycle.events.PlayerCountUpdated;
+import ru.aemmie.cycle.events.log.TextVisibleEvent;
+import ru.aemmie.cycle.global.StateHolder;
+import ru.aemmie.cycle.global.Utils;
+import ru.aemmie.cycle.objects.Weapon;
 
-import static org.apache.commons.lang3.StringUtils.substringAfter;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import static org.apache.commons.lang3.StringUtils.substringBetween;
-import static ru.aemmie.cycle.Utils.PLAYER_PREFIX;
-import static ru.aemmie.cycle.events.parser.player.PlayerStateEvent.PlayerState.FINISHED;
-import static ru.aemmie.cycle.events.parser.player.PlayerStateEvent.PlayerState.IN_MATCH;
+import static ru.aemmie.cycle.global.Utils.beep;
 
-public class PlayerParser implements Parser {
+@Slf4j
+class PlayerParser implements Parser {
 
-    @Override
-    public String type() {
-        return "LogYPlayer";
-    }
+    private boolean lastFinished = false;
 
     @Override
-    public ParserEvent parse(Line line) {
-        if (line.startsWith("OnRep_PlayerMatchState")) {
-            var state = substringBetween(line.getMsg(), "[", "]");
-            return PlayerStateEvent.builder()
-                    .time(line.getTime())
-                    .state("inMatch".equals(state) ? IN_MATCH : FINISHED)
-                    .build();
-        } else if (line.startsWith("OnPlayerStateChanged")) {
-            String stateId = substringBetween(line.getMsg(), "PlayerState_Match_BP_C_", "'");
-            return PlayerBodyCreatedEvent.builder()
-                    .time(line.getTime())
-                    //there are rare situations where Playerstate is 'None'
-                    .stateId(stateId != null ? stateId : substringBetween(line.getMsg(), "Playerstate '", "'"))
-                    .characterId(substringBetween(line.getMsg(), PLAYER_PREFIX, "'"))
-                    .role(substringBetween(line.getMsg(), "Role '", "'"))
-                    .map(GameMap.parse(substringBetween(line.getMsg(), "/Game/Maps/MP/", "/")))
-                    .build();
-        } else if (line.startsWith("AYPlayerCharacter::Destroyed()")) {
-            return PlayerBodyDestroyedEvent.builder()
-                    .time(line.getTime())
-                    .characterId(substringAfter(line.getMsg(), PLAYER_PREFIX))
-                    .build();
-        } else if (line.startsWith("AYPlayerState::OnRep_PlayerMatchFinishedResult")) {
-            var state = EnumUtils.getEnumIgnoreCase(PlayerFinishedEvent.PlayerState.class, substringBetween(line.getMsg(), "Result:", " "));
-            var builder = PlayerFinishedEvent.builder()
-                    .time(line.getTime())
-                    .state(state);
-            if (state == PlayerFinishedEvent.PlayerState.DEAD) {
-                builder
-                        .causer(substringBetween(line.getMsg(), "Damage:Causer:", " "))
-                        .damage(Double.parseDouble(substringBetween(line.getMsg(), "m_healthDamage:", " ")))
-                        .origin(substringBetween(line.getMsg(), "Origin:OriginRow:", " "));
-            }
-            return builder.build();
-
+    public void parse(Instant time, String type, String text) {
+        if (!StateHolder.isInGame()) {
+            return;
         }
-        return null;
+
+        switch (type) {
+            case "LogYPlayer" -> {
+                if (text.startsWith("OnRep_PlayerMatchState")) {
+                    var state = substringBetween(text, "[", "]");
+                    var game = StateHolder.getCurrentGame();
+                    if ("inMatch".equals(state)) {
+                        game.players++;
+                        if (game.players > game.partySize) {
+                            beep(2000, 250, time);
+                        }
+                        lastFinished = false;
+                    } else {
+                        game.players--;
+                        if (game.players > game.partySize) {
+                            beep(400, 150, time);
+                        }
+                        lastFinished = true;
+                    }
+                    Utils.eventBus.post(new PlayerCountUpdated());
+                } else if (text.startsWith("OnPlayerStateChanged")) {
+                    StateHolder.getCurrentGame().radar++;
+                    Utils.eventBus.post(new PlayerCountUpdated());
+                } else if (text.startsWith("AYPlayerCharacter::Destroyed()")) {
+                    StateHolder.getCurrentGame().radar--;
+                    Utils.eventBus.post(new PlayerCountUpdated());
+                } else if (text.startsWith("AYPlayerState::OnRep_PlayerMatchFinishedResult")) {
+                    var result = substringBetween(text, "Result:", " ");
+                    switch (result) {
+                        case "escaped" -> {
+                            log.info("Player escaped");
+                            Utils.eventBus.post(new TextVisibleEvent(time, Duration.of(15, ChronoUnit.SECONDS),
+                                    "Player escaped"));
+                        }
+                        case "Dead" -> {
+                            var causerParts = substringBetween(text, "Damage:Causer:", " ").split("_C_", 2);
+                            String causerString = causerParts[0];
+                            var causer = Weapon.parse(causerString);
+                            var originString = substringBetween(text, "Origin:OriginRow:[", "]");
+                            var origin = Weapon.parse(originString);
+                            var damage = "%.2f".formatted(Double.parseDouble(substringBetween(text, "m_healthDamage:", " ")));
+                            int times = 0;
+                            Weapon weapon = switch (causer) {
+                                case null -> null;
+                                case NONE -> Weapon.SUICIDE;
+                                case PLAYER -> {
+                                    if (origin == Weapon.NONE) {
+                                        yield Weapon.HEIGHT;
+                                    }
+                                    times = StateHolder.getCurrentGame().kill(causerParts[1]);
+                                    yield origin;
+                                }
+                                default -> causer;
+                            };
+                            log.info("Player killed: %s: %s".formatted(weapon, damage));
+                            if (weapon == null) {
+                                log.error(text);
+                            }
+                            Utils.eventBus.post(new TextVisibleEvent(time, Duration.of(15, ChronoUnit.SECONDS),
+                                    "<html>Player dead (%s: %s)%s</html>".formatted(weapon == null ? originString : weapon.toColorfulString(), damage, times > 1 ? " [x%d]".formatted(times) : "")));
+                        }
+                        default -> {
+                            log.error("Unknown result:\n" + text);
+                        }
+                    }
+                    Utils.eventBus.post(new PlayerCountUpdated());
+                }
+            }
+            case "LogYInventory" -> {
+                if (lastFinished && text.startsWith("GetInventoryComponentManager | Could not retrieve YGameStateMatch!")) {
+                    StateHolder.getCurrentGame().players++;
+                    lastFinished = false;
+                    log.info("Player finished before loading, revert player count.");
+                    Utils.eventBus.post(new PlayerCountUpdated());
+                }
+            }
+        }
     }
 }

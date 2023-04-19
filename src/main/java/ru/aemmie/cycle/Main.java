@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.Tailer;
 import ru.aemmie.cycle.overlay.Overlay;
+import ru.aemmie.cycle.parsers.Listener;
 
 import javax.swing.*;
 import java.nio.file.Files;
@@ -26,10 +27,12 @@ public class Main {
 
         log.info("Starting log parser...");
 
-        SwingUtilities.invokeAndWait(Overlay::new);
+        Integer width = args.length == 2 ? Integer.parseInt(args[0]) : null;
+        Integer height = args.length == 2 ? Integer.parseInt(args[1]) : null;
 
-        new Tailer(prospect.toFile(), new Listener(), 500).run();
+        SwingUtilities.invokeAndWait(() -> new Overlay(width, height));
 
+        new Tailer(prospect.toFile(), new Listener(), 250).run();
     }
 
 }

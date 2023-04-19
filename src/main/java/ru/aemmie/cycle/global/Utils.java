@@ -1,7 +1,6 @@
-package ru.aemmie.cycle;
+package ru.aemmie.cycle.global;
 
 import com.google.common.eventbus.EventBus;
-import lombok.SneakyThrows;
 import org.ocpsoft.prettytime.PrettyTime;
 import ru.aemmie.cycle.win.Kernel32;
 
@@ -17,19 +16,13 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class Utils {
 
     public static final EventBus eventBus = new EventBus();
+    public static final Color ORANGE = new Color(255, 128, 0);
 
     public static final PrettyTime prettyTime = new PrettyTime(Locale.US);
     public static final String PLAYER_PREFIX = "PRO_PlayerCharacter_C_";
     public static final String AI_CHAR_PREFIX = "AIChar_";
 
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-
-
-    @SneakyThrows
-    public static <T> T getInstance(Class<T> cl) {
-        return cl.getConstructor().newInstance();
-    }
 
     public static void beep(int freq, int duration) {
         Kernel32.INSTANCE.Beep(freq, duration);

@@ -7,7 +7,7 @@ public enum Rarity {
     COMMON("#979a9a"),
     UNCOMMON("#58d68d"),
     RARE("#0495b4"),
-    EPIC("#a569bd"),
+    EPIC("#b584c8"),
     EXOTIC("#e74c3c"),
     LEGENDARY("orange"),
     RAINBOW("R A I N B O W") {

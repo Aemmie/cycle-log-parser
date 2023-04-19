@@ -4,17 +4,16 @@ import com.sun.jna.Native;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinUser;
-import ru.aemmie.cycle.overlay.component.EventLogBlock;
-import ru.aemmie.cycle.overlay.component.ServerBlock;
-import ru.aemmie.cycle.overlay.component.TimeBlock;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import java.awt.*;
 
+@Slf4j
 public class Overlay extends JFrame {
 
-    public Overlay() {
-        super("The Cycle: log parser");
+    public Overlay(Integer width, Integer height) {
+        super("The Cycle: Overlay");
         this.setUndecorated(true);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setBackground(new Color(0, 0, 0, 0));
@@ -23,11 +22,17 @@ public class Overlay extends JFrame {
         this.setType(JFrame.Type.UTILITY);
         this.setFocusableWindowState(false);
 
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        int width = gd.getDisplayMode().getWidth();
-        int height = gd.getDisplayMode().getHeight();
+        DisplayMode displayMode = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
+        if (width == null) {
+            width = displayMode.getWidth();
+        }
+        if (height == null) {
+            height = displayMode.getHeight();
+        }
 
+        // -30 to not overlap with windows control panel at the bottom (sorry guys with left/right panels)
         Dimension d = new Dimension(width, height - 30);
+        log.info("Screen size: %dx%d".formatted(width, height));
         this.setSize(d);
         this.setMinimumSize(d);
 
