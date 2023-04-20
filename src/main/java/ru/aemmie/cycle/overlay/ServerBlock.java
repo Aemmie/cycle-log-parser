@@ -21,7 +21,7 @@ class ServerBlock extends JPanel {
 
         serverLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
         serverLabel.setForeground(Utils.ORANGE);
-        serverLabel.setBorder(new EmptyBorder(0, 0, 0, 30));
+        serverLabel.setBorder(new EmptyBorder(0, 0, 0, 40));
         playersLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 60));
         playersLabel.setForeground(Utils.ORANGE);
 
@@ -39,7 +39,12 @@ class ServerBlock extends JPanel {
         if (game == null) {
             this.setVisible(false);
         } else {
-            serverLabel.setText(game.name);
+            var ago = StateHolder.gamesAgo();
+            var text = game.name;
+            if (ago != null) {
+                text = "%d|%s".formatted(ago, text);
+            }
+            serverLabel.setText(text);
             this.setVisible(true);
         }
     }

@@ -34,4 +34,17 @@ public class StateHolder {
     public static boolean isInGame() {
         return inGame;
     }
+
+    public static Integer gamesAgo() {
+        int counter = 0;
+        var iterator = games.listIterator();
+        var game = iterator.next();
+        while (iterator.hasNext()) {
+            counter++;
+            if (iterator.next() == game) {
+                return counter;
+            }
+        }
+        return null;
+    }
 }

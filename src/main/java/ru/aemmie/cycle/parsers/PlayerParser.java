@@ -66,8 +66,7 @@ class PlayerParser implements Parser {
                             var origin = Weapon.parse(originString);
                             var damage = "%.2f".formatted(Double.parseDouble(substringBetween(text, "m_healthDamage:", " ")));
                             int times = 0;
-                            Weapon weapon = switch (causer) {
-                                case null -> null;
+                            Weapon weapon = causer == null ? null : switch (causer) {
                                 case NONE -> Weapon.SUICIDE;
                                 case PLAYER -> {
                                     if (origin == Weapon.NONE) {
