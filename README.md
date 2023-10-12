@@ -1,5 +1,8 @@
-# The Cycle: Frontier log parser
+# Archived
+Dead game, dead repo i guess.
 
+
+# The Cycle: Frontier log parser
 
 UI with usefull info such as:
 * Unique instance name (derived from instance UUID)
